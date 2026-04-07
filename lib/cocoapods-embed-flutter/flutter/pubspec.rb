@@ -139,8 +139,12 @@ module Flutter
         return nil if !future.nil?
         future = Concurrent::Promises.future do
           env = { 'FLUTTER_SUPPRESS_ANALYTICS' => 'true', 'CI' => 'true' }
-          stdout, stderr, status = Open3.capture3(env, 'flutter', 'pub', 'get', :chdir => self.project_path)
-          raise StandardError, "flutter pub get failed for '#{File.basename(self.project_path)}':\n#{stderr}" unless status.success?
+          Pod::UI.message "Running flutter pub get in #{self.project_path}"
+          Open3.popen2e(env, 'flutter', 'pub', 'get', :chdir => self.project_path) do |_stdin, stdout_err, wait_thr|
+            stdout_err.each_line { |line| Pod::UI.message line.rstrip }
+            status = wait_thr.value
+            raise StandardError, "flutter pub get failed for '#{File.basename(self.project_path)}'" unless status.success?
+          end
           :result
         end
         @@current_pubgets[self] = future
