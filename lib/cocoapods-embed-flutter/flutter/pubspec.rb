@@ -137,7 +137,7 @@ module Flutter
       def pub_get
         future = @@current_pubgets[self]
         return nil if !future.nil?
-        future = Concurrent::Promises.future do
+        future = Concurrent::Promises.future_on(@@pub_get_executor) do
           env = { 'FLUTTER_SUPPRESS_ANALYTICS' => 'true', 'CI' => 'true' }
           Pod::UI.message "Running flutter pub get in #{self.project_path}"
           Open3.popen2e(env, 'flutter', 'pub', 'get', :chdir => self.project_path) do |_stdin, stdout_err, wait_thr|
@@ -193,6 +193,10 @@ module Flutter
 
       # A hash containing all `pub get` promises.
       @@current_pubgets = {}
+
+      # Executor limiting concurrent `flutter pub get` processes to avoid
+      # Flutter startup lock contention when many packages are resolved in parallel.
+      @@pub_get_executor = Concurrent::FixedThreadPool.new(4)
     end
   end
 end
