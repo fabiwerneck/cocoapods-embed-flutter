@@ -137,43 +137,14 @@ module Flutter
       def pub_get
         future = @@current_pubgets[self]
         return nil if !future.nil?
-        flutter_cmd = self.class.flutter_executable
         future = Concurrent::Promises.future do
-          stdout, stderr, status = Open3.capture3(flutter_cmd, 'pub', 'get', :chdir => self.project_path)
-          unless status.success?
-            raise StandardError, "flutter pub get failed for '#{File.basename(self.project_path)}':\n#{stderr}"
-          end
+          env = { 'FLUTTER_SUPPRESS_ANALYTICS' => 'true', 'CI' => 'true' }
+          stdout, stderr, status = Open3.capture3(env, 'flutter', 'pub', 'get', :chdir => self.project_path)
+          raise StandardError, "flutter pub get failed for '#{File.basename(self.project_path)}':\n#{stderr}" unless status.success?
           :result
         end
         @@current_pubgets[self] = future
         return Concurrent::Promises.zip(future, *all_dependencies.map(&:install).compact)
-      end
-
-      # Returns the path to the flutter executable, searching common locations
-      # used in CI environments if not found in PATH.
-      #
-      # @return [String] path or command name for the flutter executable.
-      #
-      # @raise [StandardError] if flutter is not found.
-      #
-      def self.flutter_executable
-        return @@flutter_cmd if defined?(@@flutter_cmd) && @@flutter_cmd
-
-        path_from_which = `which flutter 2>/dev/null`.strip
-        if !path_from_which.empty? && File.executable?(path_from_which)
-          return @@flutter_cmd = path_from_which
-        end
-
-        common_paths = [
-          File.expand_path('~/flutter/bin/flutter'),
-          '/opt/flutter/bin/flutter',
-          '/usr/local/bin/flutter',
-          '/opt/homebrew/bin/flutter',
-        ]
-        found = common_paths.find { |p| File.executable?(p) }
-        return @@flutter_cmd = found if found
-
-        raise StandardError, "flutter executable not found. Ensure flutter is installed and available in PATH."
       end
 
       # See if two {Spec} instances refer to the same pubspecs.
