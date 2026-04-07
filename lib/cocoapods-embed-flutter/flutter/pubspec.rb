@@ -46,10 +46,10 @@ module Flutter
 
         if File.basename(path) == Pub::SPEC_FILE
           return path
-        elsif Dir.exists?(File.expand_path(name, path)) &&
-         File.exists?(File.expand_path(Pub::SPEC_FILE, File.expand_path(name, path)))
+        elsif Dir.exist?(File.expand_path(name, path)) &&
+         File.exist?(File.expand_path(Pub::SPEC_FILE, File.expand_path(name, path)))
           return File.expand_path(Pub::SPEC_FILE, File.expand_path(name, path))
-        elsif File.exists?(File.expand_path(Pub::SPEC_FILE, path))
+        elsif File.exist?(File.expand_path(Pub::SPEC_FILE, path))
           return File.expand_path(Pub::SPEC_FILE, path)
         else
           return nil

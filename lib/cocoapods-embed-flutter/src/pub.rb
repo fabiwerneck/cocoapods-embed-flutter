@@ -116,7 +116,7 @@ module Pod
           future = pubspec.pub_get
           future.value! if !future.nil?
         end
-        raise StandardError, "Invalid flutter module: '#{name}'." unless File.exists?(pubspec.pod_helper_path)
+        raise StandardError, "Invalid flutter module: '#{name}'." unless File.exist?(pubspec.pod_helper_path)
         install_flutter_pods_for_pubspec(pubspec)
       end
 
